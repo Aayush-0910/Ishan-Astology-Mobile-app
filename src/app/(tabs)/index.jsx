@@ -1,324 +1,290 @@
 import React from 'react';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Screen from '../../components/Screen';
-import Hero from '../../components/Hero';
-import SystemsTicker from '../../components/Ticker';
-import ReviewsSection from '../../components/ReviewsSection';
-import {
-  BnnArc,
-  HoraryWheel,
-  KpChart,
-  LoShuGrid,
-  YantraStar,
-} from '../../components/Illustrations';
-import {
-  Button,
-  Card,
-  Em,
-  FeatureList,
-  H1,
-  H2,
-  H3,
-  P,
-  SanskritSub,
-  Section,
-  SectionIntro,
-  SectionLabel,
-  SystemTag,
-} from '../../components/ui';
-import { useSectionScroll } from '../../hooks/useSectionScroll';
-import { colors, fonts } from '../../theme';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActionTile, Button, Card, Icon, Pill, SectionHeader } from '../../components/ui';
+import ServiceArt from '../../components/ServiceArt';
+import { StarRating } from '../../components/Stars';
+import { PACKAGES, packageBySlug } from '../../data/services';
+import { CASES, PROCESS } from '../../data/content';
+import { REVIEWS } from '../../data/reviews';
+import { PHONES, WHATSAPP_LINK } from '../../config/contact';
+import { firstName, useAppStore } from '../../state/AppStore';
+import { bookingStatus, formatDate } from '../../utils/bookings';
+import { openLink } from '../../utils/openLink';
+import { tap } from '../../utils/haptics';
+import { colors, fonts, radius, spacing } from '../../theme';
 
-const trustBadge =
-  'Precision KP & BNN Astrology since 2020 · 1,000+ Verified Consultations Delivered';
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
 
-const SYSTEMS = [
-  {
-    id: 'kp',
-    tag: 'Flagship System · I',
-    tone: 'gold',
-    title: 'KP Astrology —',
-    em: 'precision down to the sub lord.',
-    sanskrit: 'कृष्णमूर्ति पद्धति',
-    numeral: 'I',
-    Art: KpChart,
-    paragraphs: [
-      "Krishnamurti Paddhati is the practice's flagship timing system. It uses sub-lord theory and the Placidus house division to deliver sharper event timing than sign-based predictions allow.",
-      'Every KP reading begins from one principle: a planet\'s promise is judged by the sub lord of the cusp it occupies. From there, ruling planets, dasha periods and transit windows are tested in sequence — narrowing a vague "soon" to a specific date range.',
-      'This is the primary system used for marriage timing, career change, litigation windows, foreign settlement, and any question where when matters as much as whether.',
-    ],
-    features: [
-      'Marriage & relationship timing',
-      'Career & job change windows',
-      'Foreign settlement & visa',
-      'Litigation & legal matters',
-      'Property & vehicle purchase',
-      'Health & longevity periods',
-    ],
-  },
-  {
-    id: 'bnn',
-    tag: 'System · II',
-    tone: 'teal',
-    title: 'BNN —',
-    em: 'verification before prediction.',
-    sanskrit: 'भृगु नाडी',
-    numeral: 'II',
-    Art: BnnArc,
-    alt: true,
-    paragraphs: [
-      "Bhrigu Nadi reading is the practice's verification layer. A chart's accuracy is established by reading verifiable past events — only then is the chart trusted for future prediction.",
-      "The technique relies on planetary conjunctions, aspects and Jupiter's transit to read past life events directly from the natal chart — without relying on the client's input. If a BNN cold reading of past events lands accurately, the chart and birth time are confirmed before any forward-looking reading is offered.",
-      "This is also used as a second-opinion layer — checking whether a KP timing window agrees with the chart's BNN signal before a final reading is shared.",
-    ],
-    features: [
-      'Birth-time rectification',
-      'Past-event verification',
-      'Independent cross-check',
-      'Family chart patterns',
-    ],
-  },
-  {
-    id: 'numerology',
-    tag: 'System · III',
-    tone: 'teal',
-    title: 'Numerology —',
-    em: 'names, dates, decisions.',
-    sanskrit: 'अंक शास्त्र',
-    numeral: 'III',
-    Art: LoShuGrid,
-    paragraphs: [
-      'Number-based analysis of name and birth date forms the third independent layer. Used most often for child naming, choosing a business name, picking a wedding date, or deciding when to begin something significant.',
-      "Numerology is rarely the only input. It typically arrives after the KP reading — as a clean, independent check on naming and timing decisions, ensuring the numerical signature of a name or date harmonises with the natal chart's recommendations.",
-    ],
-    features: [
-      'Child naming',
-      'Business name selection',
-      'Wedding date selection',
-      'Lucky number analysis',
-      'Name correction (numerology)',
-      'Vehicle number selection',
-    ],
-  },
-  {
-    id: 'horary',
-    tag: 'KP Horary · IV',
-    tone: 'gold',
-    title: 'Horary —',
-    em: 'a chart cast on the question itself.',
-    sanskrit: 'प्रश्न कुण्डली',
-    numeral: 'IV',
-    Art: HoraryWheel,
-    alt: true,
-    paragraphs: [
-      "When a birth chart isn't available — or when a question is sharp and time-bound — KP horary casts a chart on the moment of the question itself. A number between 1 and 249 is drawn, and the chart that number describes is read with full KP rigor.",
-      'Horary is the practice\'s preferred method for tight, transactional questions: "Should I buy this property this month?", "Will this deal close?", "Where is the missing item?" — questions where a clean yes/no/when is more valuable than a life-wide reading.',
-    ],
-    features: [
-      'Yes/no business questions',
-      'Deal closure timing',
-      'Lost objects & missing persons',
-      'Single-question consultations',
-    ],
-  },
-  {
-    id: 'yantra',
-    tag: 'Specialty · V',
-    tone: 'teal',
-    title: 'Yantra & Magic Oils —',
-    em: 'sacred tools for energetic support.',
-    sanskrit: 'यंत्र एवं तेल विधि',
-    numeral: 'V',
-    Art: YantraStar,
-    paragraphs: [
-      "Certified training in yantra activation and ritual oil preparation adds a practical, energetic layer alongside chart readings — recommended when a client's situation calls for tangible support in addition to timing guidance.",
-      'Yantras are geometric diagrams, hand-prepared and consecrated to focus intention toward a specific outcome — wealth, protection, relationships. Ritual oils, blended in the same tradition, are used for anointing and everyday practice.',
-      "Each item is prescribed only after the underlying chart or numerology signature is read, so what's recommended matches what the chart actually indicates — not a generic remedy.",
-    ],
-    features: [
-      'Personalized yantra prescription',
-      'Hand-prepared ritual oils',
-      'Protection & prosperity yantras',
-      'Relationship harmony oils',
-      'Remedies paired with chart timing',
-      'Consecration guidance',
-    ],
-  },
-];
-
-const PROCESS = [
-  {
-    num: '01',
-    title: 'Birth details shared',
-    body: "Full birth date, exact time, and place of birth. Plus the specific question you'd like answered.",
-  },
-  {
-    num: '02',
-    title: 'Chart prepared & verified',
-    body: 'The chart is cast and — where birth time is uncertain — verified using BNN before any prediction.',
-  },
-  {
-    num: '03',
-    title: 'KP analysis & cross-check',
-    body: 'Sub-lords, significators and dasha timing are read. Findings are checked against BNN or Numerology where useful.',
-  },
-  {
-    num: '04',
-    title: 'Consultation & written report',
-    body: 'The reading is delivered by WhatsApp, phone or video call — followed by a structured written report.',
-  },
-];
-
-const CASES = [
-  { title: 'Marriage Timing', body: 'KP analysis isolated a single nakshatra activating the 7th house, narrowing the marriage window to a specific high-priority date range rather than a vague "soon."' },
-  { title: 'Business Decision Horary', body: 'A horary chart for a business purchase identified a tight 2-day window as most favorable for the transaction, ahead of a major commitment.' },
-  { title: 'Career & Wealth', body: 'A full natal analysis mapped house strength and dasha timing for wealth and health, giving a clear sequence of favorable and cautious periods ahead.' },
-  { title: 'Travel Timing', body: 'House strength and transit analysis pinpointed a favorable window for a planned overseas trip, avoiding a period flagged for delays.' },
-  { title: 'Visa & PR', body: 'KP significators for foreign settlement houses were checked against dasha timing to identify the most likely period for visa approval.' },
-  { title: 'Medical Astrology', body: '6th and 8th house significators combined with current dasha were read to flag a health period needing caution, alongside a recovery window.' },
-  { title: 'Child Birth', body: "5th house promise and timing analysis were used to identify a favorable period for conception, sequenced against the couple's running dashas." },
-  { title: 'Education', body: '4th and 9th house strength guided the choice between two academic paths, with dasha timing showing which year favored a clean start.' },
-  { title: 'Property', body: '4th house and Mars/Saturn significators were analyzed to time a property purchase around a period of stable, supportive dasha.' },
-  { title: 'Longevity', body: '8th house and marakasthana analysis for an elder family member identified vulnerable periods, helping the family plan care and precautions in advance.' },
-  { title: 'Vehicle Purchase', body: '4th house and significator timing identified a favorable window for buying a vehicle, avoiding a period flagged for loss or expense.' },
-  { title: 'Missing Objects', body: 'Horary analysis of significator houses and ruling planets was used to indicate the likely direction and timeframe for recovery.' },
-];
-
-function SystemSection({ system, onLayout }) {
-  const { width } = useWindowDimensions();
-  const artSize = Math.min(width - 80, 320);
-  const { Art } = system;
-
+function LatestBooking({ booking }) {
+  const pkg = packageBySlug(booking.slug);
+  const status = bookingStatus(booking);
   return (
-    <Section alt={system.alt} onLayout={onLayout}>
-      <SystemTag tone={system.tone}>{system.tag}</SystemTag>
-      <H2>
-        {system.title}
-        {'\n'}
-        <Em>{system.em}</Em>
-      </H2>
-      <SanskritSub>{system.sanskrit}</SanskritSub>
-      {system.paragraphs.map((p) => (
-        <P key={p.slice(0, 24)}>{p}</P>
-      ))}
-      <FeatureList items={system.features} />
-
-      <View style={styles.artFrame}>
-        <Text style={styles.artNumeral}>{system.numeral}</Text>
-        <Art size={artSize} />
+    <Card onPress={() => router.push(`/bookings/${booking.id}`)} style={styles.latest}>
+      <View style={styles.latestTop}>
+        <Text style={styles.latestLabel}>Your consultation</Text>
+        <Pill tone={status.tone} icon={status.icon}>
+          {status.label}
+        </Pill>
       </View>
-    </Section>
+      <Text style={styles.latestTitle}>{pkg?.title}</Text>
+      <Text style={styles.latestMeta}>
+        {formatDate(booking.createdAt)} · Ref {booking.id}
+      </Text>
+    </Card>
   );
 }
 
-export default function ServicesScreen() {
-  const { scrollRef, register } = useSectionScroll();
+export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
+  const { profile, bookings } = useAppStore();
+  const name = firstName(profile);
+  const latest = bookings[0];
 
   return (
-    <Screen scrollRef={scrollRef}>
-      <Hero>
-        <SectionLabel sanskrit="सेवाएँ">Services</SectionLabel>
-        <H1>
-          Three systems.{'\n'}
-          <Em>One disciplined practice.</Em>
-        </H1>
-        <P muted>
-          KP for timing. BNN for verification. Numerology for naming and decision support. Each
-          system independent — used together only when the chart calls for it.
-        </P>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.bgPrimary }}
+      contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 32 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.pad}>
+        <View style={styles.header}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.hello}>
+              {greeting()}
+              {name ? `, ${name}` : ''} 🙏
+            </Text>
+            <Text style={styles.brand}>Ishan Astrology</Text>
+          </View>
+          <Pressable
+            onPress={() => {
+              tap();
+              router.navigate('/profile');
+            }}
+            style={styles.avatar}
+            accessibilityRole="button"
+            accessibilityLabel="Profile"
+          >
+            <Text style={styles.avatarText}>{name ? name[0].toUpperCase() : 'ॐ'}</Text>
+          </Pressable>
+        </View>
 
-        <View style={styles.trustBadge}>
-          <Text style={styles.trustText}>
-            <Text style={{ color: colors.gold }}>✦ </Text>
-            {trustBadge}
+        {/* Quick-question hero */}
+        <View style={styles.hero}>
+          <Pill tone="light" icon="flash">
+            Answer in 24–48 hours
+          </Pill>
+          <Text style={styles.heroTitle}>Have one question on your mind?</Text>
+          <Text style={styles.heroBody}>
+            KP Horary gives a clear Yes / No / When — no birth time needed.
           </Text>
+          <Button
+            title="Ask for ₹1,500"
+            icon="arrow-forward"
+            onPress={() => router.push('/book?service=horary')}
+            style={{ alignSelf: 'flex-start', marginTop: 14 }}
+          />
         </View>
 
-        <View style={styles.heroActions}>
-          <Button title="Book a Consultation" icon="→" href="/booking" />
-          <Button title="Quick Horary (₹1,500)" icon="⚡" href="/pricing?section=horary" variant="secondary" />
+        <View style={styles.actions}>
+          <ActionTile icon="calendar" label="Book" onPress={() => router.push('/book')} />
+          <ActionTile icon="chatbubbles" label="Ask" onPress={() => router.navigate('/chat')} />
+          <ActionTile icon="logo-whatsapp" label="WhatsApp" tint={colors.whatsapp} onPress={() => openLink(WHATSAPP_LINK)} />
+          <ActionTile icon="call" label="Call" tint={colors.tealLight} onPress={() => openLink(PHONES[0].href)} />
         </View>
-      </Hero>
 
-      <SystemsTicker />
+        {latest ? <LatestBooking booking={latest} /> : null}
 
-      {SYSTEMS.map((s) => (
-        <SystemSection key={s.id} system={s} onLayout={register(s.id)} />
-      ))}
+        <SectionHeader title="Consultations" action="See all" onAction={() => router.navigate('/services')} />
+      </View>
 
-      <Section onLayout={register('process')}>
-        <SectionIntro
-          label="How a Consultation Works"
-          sanskrit="प्रक्रिया"
-          title="From question to written report."
-        />
-        <View style={styles.stack}>
-          {PROCESS.map((step) => (
-            <Card key={step.num}>
-              <Text style={styles.processNum}>{step.num}</Text>
-              <H3>{step.title}</H3>
-              <P muted style={{ marginBottom: 0 }}>{step.body}</P>
-            </Card>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.carousel}
+        snapToInterval={232}
+        decelerationRate="fast"
+      >
+        {PACKAGES.map((pkg) => (
+          <Card
+            key={pkg.slug}
+            style={styles.serviceCard}
+            onPress={() => router.push(`/service/${pkg.slug}`)}
+            accessibilityLabel={`${pkg.title}, ${pkg.priceLabel}`}
+          >
+            <View style={styles.serviceArt}>
+              <ServiceArt slug={pkg.slug} size={120} />
+            </View>
+            <Text style={styles.serviceTitle} numberOfLines={1}>
+              {pkg.title}
+            </Text>
+            <Text style={styles.serviceTagline} numberOfLines={2}>
+              {pkg.tagline}
+            </Text>
+            <View style={styles.serviceFoot}>
+              <Text style={styles.servicePrice}>{pkg.priceLabel}</Text>
+              <Text style={styles.serviceTime}>{pkg.turnaround}</Text>
+            </View>
+          </Card>
+        ))}
+      </ScrollView>
+
+      <View style={styles.pad}>
+        <SectionHeader title="How it works" />
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
+        {PROCESS.map((step, i) => (
+          <Card key={step.title} style={styles.stepCard}>
+            <View style={styles.stepTop}>
+              <Icon name={step.icon} size={22} />
+              <Text style={styles.stepNum}>0{i + 1}</Text>
+            </View>
+            <Text style={styles.stepTitle}>{step.title}</Text>
+            <Text style={styles.stepBody}>{step.body}</Text>
+          </Card>
+        ))}
+      </ScrollView>
+
+      <View style={styles.pad}>
+        <View style={styles.stats}>
+          {[
+            ['2020', 'Practising since'],
+            ['1,000+', 'Consultations'],
+            ['Worldwide', 'Clients'],
+          ].map(([big, small]) => (
+            <View key={small} style={styles.stat}>
+              <Text style={styles.statBig}>{big}</Text>
+              <Text style={styles.statSmall}>{small}</Text>
+            </View>
           ))}
         </View>
-      </Section>
 
-      <Section alt onLayout={register('cases')}>
-        <SectionIntro
-          label="From Recent Consultations"
-          sanskrit="अनुभव"
-          title="What the chart actually predicted."
-        >
-          Twelve anonymised case threads — each showing how chart mechanics translated into a
-          specific timing or decision.
-        </SectionIntro>
-        <View style={styles.stack}>
-          {CASES.map((c) => (
-            <Card key={c.title}>
-              <Text style={styles.caseStar}>✦</Text>
-              <H3>{c.title}</H3>
-              <P muted style={{ marginBottom: 0 }}>{c.body}</P>
-            </Card>
-          ))}
+        <SectionHeader title="From recent consultations" />
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
+        {CASES.map((c) => (
+          <Card key={c.title} style={styles.caseCard}>
+            <Icon name="sparkles" size={16} />
+            <Text style={styles.caseTitle}>{c.title}</Text>
+            <Text style={styles.caseBody} numberOfLines={6}>
+              {c.body}
+            </Text>
+          </Card>
+        ))}
+      </ScrollView>
+
+      {REVIEWS.length > 0 ? (
+        <>
+          <View style={styles.pad}>
+            <SectionHeader title="What seekers say" action="Write one" onAction={() => router.push('/reviews')} />
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
+            {REVIEWS.map((r) => (
+              <Card key={`${r.name}-${r.date}`} style={styles.caseCard}>
+                <StarRating rating={r.rating} />
+                <Text style={styles.caseBody} numberOfLines={6}>
+                  “{r.body}”
+                </Text>
+                <Text style={styles.reviewName}>{r.name}</Text>
+              </Card>
+            ))}
+          </ScrollView>
+        </>
+      ) : (
+        <View style={styles.pad}>
+          <Card onPress={() => router.push('/reviews')} style={styles.reviewInvite}>
+            <Icon name="star" size={22} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.inviteTitle}>Had a consultation?</Text>
+              <Text style={styles.inviteBody}>Share how it went — it helps others decide.</Text>
+            </View>
+            <Icon name="chevron-forward" size={18} color={colors.textMuted} />
+          </Card>
         </View>
-      </Section>
-
-      <ReviewsSection onLayout={register('reviews')} />
-    </Screen>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  trustBadge: {
-    borderWidth: 1,
-    borderColor: colors.borderGold,
-    backgroundColor: 'rgba(200,160,70,0.08)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginTop: 4,
-  },
-  trustText: { fontFamily: fonts.serif, color: colors.lightGold, fontSize: 13.5, lineHeight: 20 },
-  heroActions: { gap: 12, marginTop: 24 },
-  artFrame: {
-    marginTop: 28,
+  pad: { paddingHorizontal: spacing.gutter },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
+  hello: { fontFamily: fonts.serif, color: colors.textMuted, fontSize: 15 },
+  brand: { fontFamily: fonts.heading, color: colors.textLight, fontSize: 25, marginTop: 2 },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: colors.gold,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.surface,
+  },
+  avatarText: { fontFamily: fonts.sanskrit, color: colors.gold, fontSize: 20 },
+
+  hero: {
+    backgroundColor: colors.teal,
+    borderRadius: radius.lg,
+    padding: 20,
+    overflow: 'hidden',
+  },
+  heroTitle: { fontFamily: fonts.heading, color: '#fff', fontSize: 21, lineHeight: 28, marginTop: 12 },
+  heroBody: { fontFamily: fonts.serif, color: 'rgba(255,255,255,0.85)', fontSize: 15, lineHeight: 22, marginTop: 6 },
+
+  actions: { flexDirection: 'row', marginTop: 22, marginBottom: 4 },
+
+  latest: { marginTop: 20 },
+  latestTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  latestLabel: { fontFamily: fonts.serif, color: colors.textMuted, fontSize: 13 },
+  latestTitle: { fontFamily: fonts.heading, color: colors.textLight, fontSize: 17, marginTop: 8 },
+  latestMeta: { fontFamily: fonts.serif, color: colors.textMuted, fontSize: 13, marginTop: 4 },
+
+  carousel: { paddingHorizontal: spacing.gutter, gap: 12 },
+  serviceCard: { width: 220, padding: 14 },
+  serviceArt: {
+    height: 128,
+    borderRadius: radius.md,
+    backgroundColor: colors.bgDeep,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  serviceTitle: { fontFamily: fonts.heading, color: colors.textLight, fontSize: 15 },
+  serviceTagline: { fontFamily: fonts.serif, color: colors.textMuted, fontSize: 13, lineHeight: 18, marginTop: 4, minHeight: 36 },
+  serviceFoot: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 10 },
+  servicePrice: { fontFamily: fonts.display, color: colors.lightGold, fontSize: 22 },
+  serviceTime: { fontFamily: fonts.serif, color: colors.textMuted, fontSize: 12 },
+
+  stepCard: { width: 200 },
+  stepTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  stepNum: { fontFamily: fonts.display, color: 'rgba(200,160,70,0.5)', fontSize: 22 },
+  stepTitle: { fontFamily: fonts.heading, color: colors.textLight, fontSize: 14.5, marginBottom: 6 },
+  stepBody: { fontFamily: fonts.serif, color: colors.textMuted, fontSize: 13, lineHeight: 19 },
+
+  stats: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     paddingVertical: 16,
-    borderWidth: 1,
-    borderColor: colors.borderGold,
-    borderRadius: 16,
-    backgroundColor: 'rgba(10, 32, 56, 0.45)',
+    marginTop: spacing.section,
   },
-  artNumeral: {
-    position: 'absolute',
-    top: 8,
-    right: 14,
-    fontFamily: fonts.display,
-    color: 'rgba(200,160,70,0.35)',
-    fontSize: 30,
-  },
-  stack: { gap: 14 },
-  processNum: { fontFamily: fonts.display, color: colors.gold, fontSize: 34, marginBottom: 4 },
-  caseStar: { color: colors.gold, fontSize: 16, marginBottom: 8 },
+  stat: { flex: 1, alignItems: 'center' },
+  statBig: { fontFamily: fonts.display, color: colors.lightGold, fontSize: 21 },
+  statSmall: { fontFamily: fonts.serif, color: colors.textMuted, fontSize: 12, marginTop: 2 },
+
+  caseCard: { width: 250, gap: 6 },
+  caseTitle: { fontFamily: fonts.heading, color: colors.textLight, fontSize: 14.5 },
+  caseBody: { fontFamily: fonts.serif, color: colors.textMuted, fontSize: 13, lineHeight: 19 },
+  reviewName: { fontFamily: fonts.serifMedium, color: colors.lightGold, fontSize: 13 },
+
+  reviewInvite: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: spacing.section },
+  inviteTitle: { fontFamily: fonts.heading, color: colors.textLight, fontSize: 15 },
+  inviteBody: { fontFamily: fonts.serif, color: colors.textMuted, fontSize: 13, marginTop: 2 },
 });

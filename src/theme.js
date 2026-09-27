@@ -1,6 +1,5 @@
 /**
- * Design tokens carried over from the website's CSS custom properties, so the
- * app keeps the same midnight-blue, gold and teal palette.
+ * Design tokens — the brand's midnight-blue, gold and teal palette.
  */
 export const colors = {
   bgPrimary: '#0E2A47',
@@ -19,6 +18,10 @@ export const colors = {
   error: '#E58A7B',
   success: '#5BC0A0',
   whatsapp: '#25D366',
+  surface: '#12304F',
+  surfaceRaised: '#183C63',
+  separator: 'rgba(233, 228, 214, 0.08)',
+  amber: '#E0A84A',
 };
 
 /**
@@ -39,8 +42,15 @@ export const fonts = {
 };
 
 export const spacing = {
-  gutter: 20,
-  section: 44,
+  gutter: 16,
+  section: 28,
+};
+
+export const radius = {
+  sm: 10,
+  md: 14,
+  lg: 20,
+  pill: 999,
 };
 
 export const cardShadow = {
