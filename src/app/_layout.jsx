@@ -16,6 +16,7 @@ import { CormorantGaramond_500Medium_Italic } from '@expo-google-fonts/cormorant
 import { CormorantGaramond_600SemiBold } from '@expo-google-fonts/cormorant-garamond/600SemiBold';
 import { TiroDevanagariSanskrit_400Regular } from '@expo-google-fonts/tiro-devanagari-sanskrit/400Regular';
 
+import { AppStoreProvider } from '../state/AppStore';
 import { colors, fonts } from '../theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -55,23 +56,30 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider value={navTheme}>
-        <StatusBar style="light" />
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: colors.bgPrimary },
-            headerTintColor: colors.lightGold,
-            headerTitleStyle: { fontFamily: fonts.heading, color: colors.textLight },
-            contentStyle: { backgroundColor: colors.bgPrimary },
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="chat"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-        </Stack>
-      </ThemeProvider>
+      <AppStoreProvider>
+        <ThemeProvider value={navTheme}>
+          <StatusBar style="light" />
+          <Stack
+            screenOptions={{
+              headerStyle: { backgroundColor: colors.bgPrimary },
+              headerTintColor: colors.gold,
+              headerTitleStyle: { fontFamily: fonts.heading, color: colors.textLight, fontSize: 17 },
+              headerShadowVisible: false,
+              headerBackButtonDisplayMode: 'minimal',
+              contentStyle: { backgroundColor: colors.bgPrimary },
+            }}
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="service/[slug]" options={{ title: '' }} />
+            <Stack.Screen name="book" options={{ title: 'Book a Reading', presentation: 'fullScreenModal' }} />
+            <Stack.Screen name="bookings/[id]" options={{ title: 'Consultation' }} />
+            <Stack.Screen name="profile-edit" options={{ title: 'My Birth Details', presentation: 'modal' }} />
+            <Stack.Screen name="reviews" options={{ title: 'Reviews & Feedback' }} />
+            <Stack.Screen name="about" options={{ title: 'About Ishan' }} />
+            <Stack.Screen name="faq" options={{ title: 'Help & FAQ' }} />
+          </Stack>
+        </ThemeProvider>
+      </AppStoreProvider>
     </SafeAreaProvider>
   );
 }
